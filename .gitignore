@@ -1,0 +1,5 @@
+node_modules/
+dist/
+*.unitypackage
+unity-session.json
+scraped-assets.json
