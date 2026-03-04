@@ -144,10 +144,11 @@ function mergeWithSupplement(
   const extras: PurchasedItem[] = [];
 
   for (const s of supplement) {
-    if (!knownIds.has(s.id)) {
+    const sid = String(s.id);
+    if (!knownIds.has(sid)) {
       extras.push({
-        id: s.id,
-        name: s.name || `Package ${s.id}`,
+        id: sid,
+        name: s.name || `Package ${sid}`,
         publisher: "Unknown",
         category: "Unknown",
         slug: "",
@@ -309,8 +310,8 @@ async function downloadAsset(
     const contentLength = response.headers.get("content-length");
     const totalMB = contentLength ? (parseInt(contentLength) / 1024 / 1024).toFixed(1) : "?";
 
-    const buffer = Buffer.from(await response.arrayBuffer());
-    let data = buffer;
+    const buffer: Buffer = Buffer.from(await response.arrayBuffer());
+    let data: Buffer = buffer;
 
     // Decrypt if key provided
     if (info.key) {

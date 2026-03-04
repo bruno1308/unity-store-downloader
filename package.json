@@ -5,11 +5,16 @@
   "type": "module",
   "scripts": {
     "download": "tsx src/index.ts",
-    "dry-run": "tsx src/index.ts --dry-run"
+    "dry-run": "tsx src/index.ts --dry-run",
+    "extract": "tsx src/extract.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
+    "@types/sharp": "^0.31.1",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
   },
   "keywords": [
     "unity",
@@ -17,5 +22,12 @@
     "downloader",
     "unitypackage"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@gltf-transform/core": "^4.3.0",
+    "@gltf-transform/functions": "^4.3.0",
+    "fbx2gltf": "^0.9.7-p1",
+    "obj2gltf": "^3.2.0",
+    "sharp": "^0.34.5"
+  }
 }
