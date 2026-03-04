@@ -186,6 +186,13 @@ function normalizeMaterialName(name: string): string {
   return name.replace(/\s*\(Instance\)$/i, "").toLowerCase().trim();
 }
 
+export interface MaterialResolveResult {
+  /** Number of textures injected into the GLB */
+  injectedCount: number;
+  /** Absolute paths of texture files consumed (for exclusion from image ingestion) */
+  consumedTextures: Set<string>;
+}
+
 /**
  * Resolve Unity material textures and inject them into a GLB file.
  *
@@ -198,10 +205,24 @@ export async function resolveUnityMaterials(
   glbPath: string,
   assetDir: string,
   guidMap: Map<string, string>,
-): Promise<number> {
+): Promise<number>;
+export async function resolveUnityMaterials(
+  glbPath: string,
+  assetDir: string,
+  guidMap: Map<string, string>,
+  trackConsumed: true,
+): Promise<MaterialResolveResult>;
+export async function resolveUnityMaterials(
+  glbPath: string,
+  assetDir: string,
+  guidMap: Map<string, string>,
+  trackConsumed?: boolean,
+): Promise<number | MaterialResolveResult> {
+  const EMPTY_RESULT: MaterialResolveResult = { injectedCount: 0, consumedTextures: new Set<string>() };
+
   // 1. Find and parse all .mat files
   const matFiles = findFiles(assetDir, new Set([".mat"]));
-  if (matFiles.length === 0) return 0;
+  if (matFiles.length === 0) return trackConsumed ? EMPTY_RESULT : 0;
 
   const parsedMaterials = new Map<string, UnityTextureRef[]>();
   for (const matFile of matFiles) {
@@ -211,7 +232,7 @@ export async function resolveUnityMaterials(
       parsedMaterials.set(normalizeMaterialName(parsed.name), parsed.textures);
     }
   }
-  if (parsedMaterials.size === 0) return 0;
+  if (parsedMaterials.size === 0) return trackConsumed ? EMPTY_RESULT : 0;
 
   // 2. Read GLB
   const io = new NodeIO();
@@ -221,6 +242,7 @@ export async function resolveUnityMaterials(
   // 3. Match and inject textures
   let injectedCount = 0;
   const textureCache = new Map<string, Texture>(); // GUID → reusable Texture node
+  const consumedTextures = new Set<string>(); // absolute paths of consumed textures
 
   for (const material of root.listMaterials()) {
     const matName = normalizeMaterialName(material.getName());
@@ -249,8 +271,21 @@ export async function resolveUnityMaterials(
         textureCache.set(ref.guid, texture);
       }
 
+      // Track the consumed texture file path
+      const relativePath = guidMap.get(ref.guid);
+      if (relativePath) consumedTextures.add(path.join(assetDir, relativePath));
+
       setter(material, texture);
       injectedCount++;
+    }
+  }
+
+  // Also track ALL textures referenced by any .mat file (even those not in SLOT_MAP)
+  // so we exclude normal maps, height maps, detail maps etc. that couldn't be injected
+  for (const [, texRefs] of parsedMaterials) {
+    for (const ref of texRefs) {
+      const relativePath = guidMap.get(ref.guid);
+      if (relativePath) consumedTextures.add(path.join(assetDir, relativePath));
     }
   }
 
@@ -259,5 +294,208 @@ export async function resolveUnityMaterials(
     await io.write(glbPath, document);
   }
 
+  if (trackConsumed) return { injectedCount, consumedTextures };
   return injectedCount;
+}
+
+// ── Proximity-based texture fallback ──────────────────────────────────
+
+/** Common texture suffix patterns mapped to glTF material slots */
+const SUFFIX_SLOT_MAP: Array<{ suffixes: string[]; setter: TextureSetter }> = [
+  { suffixes: ["_diffuse", "_albedo", "_basecolor", "_base_color", "_color", "_d", "_base", "_col"],
+    setter: (mat, tex) => mat.setBaseColorTexture(tex) },
+  { suffixes: ["_normal", "_bump", "_n", "_nrm", "_norm"],
+    setter: (mat, tex) => mat.setNormalTexture(tex) },
+  { suffixes: ["_emission", "_emissive", "_e", "_emit"],
+    setter: (mat, tex) => mat.setEmissiveTexture(tex) },
+  { suffixes: ["_ao", "_occlusion", "_occ", "_ambient"],
+    setter: (mat, tex) => mat.setOcclusionTexture(tex) },
+  { suffixes: ["_metallic", "_roughness", "_mr", "_metallicgloss", "_metalroughness"],
+    setter: (mat, tex) => mat.setMetallicRoughnessTexture(tex) },
+];
+
+const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".tga", ".psd", ".bmp", ".tif", ".tiff"]);
+
+/**
+ * Classify an image filename into a glTF texture slot based on its suffix.
+ * Returns the setter function and the "stem" (filename without the suffix keyword).
+ * If no suffix matches, assumes base color.
+ */
+function classifyTextureSuffix(
+  stem: string,
+): { setter: TextureSetter; baseStem: string } {
+  const lower = stem.toLowerCase();
+  for (const { suffixes, setter } of SUFFIX_SLOT_MAP) {
+    for (const suffix of suffixes) {
+      if (lower.endsWith(suffix)) {
+        return { setter, baseStem: lower.slice(0, -suffix.length) };
+      }
+    }
+  }
+  // No recognized suffix — default to base color
+  return { setter: (mat, tex) => mat.setBaseColorTexture(tex), baseStem: lower };
+}
+
+/**
+ * Tokenize a name for fuzzy matching: lowercase, split on non-alphanumeric.
+ * Filters out short tokens (≤2 chars) and purely numeric tokens (e.g. "01", "02")
+ * which cause false positive matches between unrelated assets.
+ */
+function tokenize(name: string): string[] {
+  return name
+    .toLowerCase()
+    .replace(/([a-z])(\d)/g, "$1_$2")   // split at letter→digit boundary
+    .replace(/(\d)([a-z])/g, "$1_$2")   // split at digit→letter boundary
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 2 && !/^\d+$/.test(t));
+}
+
+/**
+ * Count shared tokens between two token arrays.
+ * Uses exact match first, then prefix match (min 4 chars) to handle
+ * plurals and suffixed variants (e.g. "cabinet" ↔ "cabinets").
+ */
+function sharedTokenCount(a: string[], b: string[]): number {
+  let count = 0;
+  for (const ta of a) {
+    for (const tb of b) {
+      if (ta === tb) { count++; break; }
+      // Prefix match: shorter token must be prefix of longer, min 4 chars
+      const shorter = ta.length <= tb.length ? ta : tb;
+      const longer = ta.length > tb.length ? ta : tb;
+      if (shorter.length >= 4 && longer.startsWith(shorter)) { count += 0.8; break; }
+    }
+  }
+  return count;
+}
+
+/**
+ * Inject textures into a GLB by matching nearby image files to untextured materials
+ * using naming conventions. This is a fallback for when Unity .mat resolution fails.
+ *
+ * Only touches materials that lack a baseColorTexture — won't overwrite existing textures.
+ *
+ * @param modelName - Optional model filename (without extension) for fallback matching
+ *   when material names are generic (e.g. "DefaultMaterial" from fbx2gltf)
+ */
+export async function injectProximityTextures(
+  glbPath: string,
+  assetDir: string,
+  alreadyConsumed: Set<string>,
+  modelName?: string,
+): Promise<MaterialResolveResult> {
+  const io = new NodeIO();
+  const document = await io.read(glbPath);
+  const root = document.getRoot();
+
+  // Find materials that lack a base color texture
+  const untexturedMaterials = root.listMaterials().filter(
+    (mat) => !mat.getBaseColorTexture(),
+  );
+  if (untexturedMaterials.length === 0) {
+    return { injectedCount: 0, consumedTextures: new Set() };
+  }
+
+  // Find candidate image files in the asset directory.
+  // NOTE: Do NOT filter by alreadyConsumed here — multiple models in the same
+  // package often share the same textures (e.g. Face.png used by every animation FBX).
+  // The consumed set is for excluding textures from standalone image ingestion, not
+  // for preventing reuse across models.
+  const allImages = findFiles(assetDir, IMAGE_EXTS);
+  if (allImages.length === 0) {
+    return { injectedCount: 0, consumedTextures: new Set() };
+  }
+
+  // Pre-classify all image files
+  const candidates = allImages.map((imgPath) => {
+    const stem = path.basename(imgPath, path.extname(imgPath));
+    const { setter, baseStem } = classifyTextureSuffix(stem);
+    const tokens = tokenize(baseStem);
+    return { imgPath, stem, baseStem, setter, tokens };
+  });
+
+  let injectedCount = 0;
+  const consumedTextures = new Set<string>();
+  const textureCache = new Map<string, Texture>();
+
+  // Special case: single material + single image → auto-match
+  if (untexturedMaterials.length === 1 && candidates.length === 1) {
+    const mat = untexturedMaterials[0];
+    const cand = candidates[0];
+    const loaded = await loadAndConvertTexture(cand.imgPath);
+    if (loaded) {
+      const texture = document
+        .createTexture(cand.stem)
+        .setImage(loaded.buffer)
+        .setMimeType(loaded.mimeType);
+      cand.setter(mat, texture);
+      consumedTextures.add(cand.imgPath);
+      injectedCount++;
+      console.log(`    [proximity] Auto-matched ${path.basename(cand.imgPath)} → ${mat.getName()} (single-pair)`);
+    }
+  } else {
+    // Match by name similarity
+    for (const mat of untexturedMaterials) {
+      const matTokens = tokenize(normalizeMaterialName(mat.getName()));
+
+      let bestMatch: typeof candidates[0] | null = null;
+      let bestScore = 0;
+
+      // Strategy 1: Match texture name against material name
+      if (matTokens.length > 0) {
+        for (const cand of candidates) {
+          if (consumedTextures.has(cand.imgPath)) continue;
+          const shared = sharedTokenCount(matTokens, cand.tokens);
+          if (shared === 0) continue;
+          if (shared > bestScore) {
+            bestScore = shared;
+            bestMatch = cand;
+          }
+        }
+      }
+
+      // Strategy 2: Fallback — match texture name against MODEL filename
+      // Handles generic material names like "DefaultMaterial" from fbx2gltf
+      if (!bestMatch && modelName) {
+        const modelTokens = tokenize(modelName);
+        if (modelTokens.length > 0) {
+          for (const cand of candidates) {
+            if (consumedTextures.has(cand.imgPath)) continue;
+            const shared = sharedTokenCount(modelTokens, cand.tokens);
+            if (shared === 0) continue;
+            // Only pick base color candidates for model-name fallback
+            const isBCCandidate = !cand.baseStem.match(/[_-](normal|bump|n|nrm|ao|occlusion|metallic|roughness|emission|emissive)$/i);
+            if (!isBCCandidate) continue;
+            if (shared > bestScore) {
+              bestScore = shared;
+              bestMatch = cand;
+            }
+          }
+        }
+      }
+
+      if (bestMatch) {
+        let texture = textureCache.get(bestMatch.imgPath);
+        if (!texture) {
+          const loaded = await loadAndConvertTexture(bestMatch.imgPath);
+          if (!loaded) continue;
+          texture = document
+            .createTexture(bestMatch.stem)
+            .setImage(loaded.buffer)
+            .setMimeType(loaded.mimeType);
+          textureCache.set(bestMatch.imgPath, texture);
+        }
+        bestMatch.setter(mat, texture);
+        consumedTextures.add(bestMatch.imgPath);
+        injectedCount++;
+        console.log(`    [proximity] Matched ${path.basename(bestMatch.imgPath)} → ${mat.getName()} (score: ${bestScore})`);
+      }
+    }
+  }
+
+  if (injectedCount > 0) {
+    await io.write(glbPath, document);
+  }
+
+  return { injectedCount, consumedTextures };
 }

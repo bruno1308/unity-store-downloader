@@ -14,7 +14,7 @@ import * as crypto from "node:crypto";
 import * as os from "node:os";
 import * as zlib from "node:zlib";
 import { NodeIO } from "@gltf-transform/core";
-import { resolveUnityMaterials } from "./unity-materials.js";
+import { resolveUnityMaterials, injectProximityTextures } from "./unity-materials.js";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -157,11 +157,18 @@ async function getObj2gltf() {
 }
 
 /**
- * Walk a directory and find all files with given extensions.
+ * Walk a directory and find all model files, separating base models from animation clips.
+ *
+ * Unity convention: "Model@AnimationName.fbx" is an animation clip for "Model.fbx".
+ * Base models are returned in `models`, animation clips grouped by base name in `animations`.
  */
-function findModelFiles(dir: string): string[] {
+function findModelFiles(dir: string): {
+  models: string[];
+  animations: Map<string, string[]>; // baseName → [animPath, ...]
+} {
   const modelExts = new Set([".fbx", ".obj", ".gltf"]);
-  const results: string[] = [];
+  const models: string[] = [];
+  const animations = new Map<string, string[]>();
 
   function walk(d: string) {
     if (!fs.existsSync(d)) return;
@@ -170,17 +177,176 @@ function findModelFiles(dir: string): string[] {
       if (entry.isDirectory()) {
         walk(fullPath);
       } else if (modelExts.has(path.extname(entry.name).toLowerCase())) {
-        results.push(fullPath);
+        const baseName = path.basename(entry.name, path.extname(entry.name));
+        if (baseName.includes("@")) {
+          // Animation clip — group by base model name
+          const modelBase = baseName.split("@")[0];
+          const key = path.join(path.dirname(fullPath), modelBase);
+          if (!animations.has(key)) animations.set(key, []);
+          animations.get(key)!.push(fullPath);
+        } else {
+          models.push(fullPath);
+        }
       }
     }
   }
   walk(dir);
-  return results;
+  return { models, animations };
 }
 
 /**
- * Convert all FBX/OBJ/GLTF files in a directory to GLB, then resolve
- * Unity material textures. Deletes original files after successful conversion.
+ * Convert a single model file (FBX/OBJ/GLTF) to GLB.
+ * Returns the output GLB path.
+ */
+async function convertSingleModel(modelPath: string, glbPath: string): Promise<void> {
+  const ext = path.extname(modelPath).toLowerCase();
+  if (ext === ".fbx") {
+    const fbx2gltf = await getFbx2gltf();
+    const tmpOut = path.join(os.tmpdir(), `unity-fbx-${crypto.randomUUID()}.glb`);
+    await fbx2gltf(modelPath, tmpOut, ["--binary"]);
+    fs.renameSync(tmpOut, glbPath);
+  } else if (ext === ".obj") {
+    const obj2gltf = await getObj2gltf();
+    const glbBuffer = await obj2gltf(modelPath, { binary: true });
+    fs.writeFileSync(glbPath, glbBuffer);
+  } else if (ext === ".gltf") {
+    const io = new NodeIO();
+    const document = await io.read(modelPath);
+    await io.write(glbPath, document);
+  }
+}
+
+/**
+ * Merge animation clips from animation GLBs into a base model GLB.
+ *
+ * Each animation FBX (e.g., "Dragon_11@Walk.fbx") contains the same skeleton
+ * with a different animation baked in. We convert each to a temp GLB, extract
+ * the animation tracks, and copy them into the base model's document.
+ *
+ * Returns the list of animation names merged.
+ */
+async function mergeAnimations(
+  baseGlbPath: string,
+  animPaths: string[],
+): Promise<string[]> {
+  const io = new NodeIO();
+  const baseDoc = await io.read(baseGlbPath);
+  const baseRoot = baseDoc.getRoot();
+  const mergedNames: string[] = [];
+
+  // Also collect any animations already in the base model (e.g., T-pose)
+  for (const existing of baseRoot.listAnimations()) {
+    const name = existing.getName();
+    if (name) mergedNames.push(name);
+  }
+
+  for (const animPath of animPaths) {
+    const baseName = path.basename(animPath, path.extname(animPath));
+    const animName = baseName.split("@")[1];
+    if (!animName) continue;
+
+    // Convert animation FBX to temp GLB
+    const tmpGlb = path.join(os.tmpdir(), `unity-anim-${crypto.randomUUID()}.glb`);
+    try {
+      await convertSingleModel(animPath, tmpGlb);
+      const animDoc = await io.read(tmpGlb);
+      const animRoot = animDoc.getRoot();
+      const animations = animRoot.listAnimations();
+
+      if (animations.length === 0) continue;
+
+      // Build a node name→node map from the base document for retargeting
+      const baseNodes = new Map<string, import("@gltf-transform/core").Node>();
+      for (const scene of baseRoot.listScenes()) {
+        for (const node of scene.listChildren()) {
+          collectNodes(node, baseNodes);
+        }
+      }
+
+      // Copy each animation from the animation document into the base
+      for (const srcAnim of animations) {
+        const dstAnim = baseDoc.createAnimation(animName);
+
+        for (const srcChannel of srcAnim.listChannels()) {
+          const srcSampler = srcChannel.getSampler();
+          const targetNode = srcChannel.getTargetNode();
+          if (!srcSampler || !targetNode) continue;
+
+          // Find the matching node in the base model by name
+          const nodeName = targetNode.getName();
+          const baseNode = baseNodes.get(nodeName);
+          if (!baseNode) continue; // skeleton bone not found — skip
+
+          // Copy sampler (input/output accessors + interpolation)
+          const srcInput = srcSampler.getInput();
+          const srcOutput = srcSampler.getOutput();
+          if (!srcInput || !srcOutput) continue;
+
+          const dstInput = baseDoc.createAccessor()
+            .setType(srcInput.getType())
+            .setArray(srcInput.getArray()!.slice());
+          const dstOutput = baseDoc.createAccessor()
+            .setType(srcOutput.getType())
+            .setArray(srcOutput.getArray()!.slice());
+
+          const dstSampler = baseDoc.createAnimationSampler()
+            .setInput(dstInput)
+            .setOutput(dstOutput)
+            .setInterpolation(srcSampler.getInterpolation());
+
+          const targetPath = srcChannel.getTargetPath();
+          if (!targetPath) continue;
+
+          const dstChannel = baseDoc.createAnimationChannel()
+            .setSampler(dstSampler)
+            .setTargetNode(baseNode)
+            .setTargetPath(targetPath);
+
+          dstAnim.addSampler(dstSampler);
+          dstAnim.addChannel(dstChannel);
+        }
+
+        if (dstAnim.listChannels().length > 0) {
+          mergedNames.push(animName);
+        } else {
+          // No channels matched — discard empty animation
+          dstAnim.dispose();
+        }
+      }
+    } catch (err) {
+      console.warn(`      ⚠ Failed to merge animation ${animName}: ${err}`);
+    } finally {
+      // Clean up temp GLB
+      if (fs.existsSync(tmpGlb)) fs.unlinkSync(tmpGlb);
+    }
+  }
+
+  if (mergedNames.length > 0) {
+    await io.write(baseGlbPath, baseDoc);
+  }
+
+  return mergedNames;
+}
+
+/** Recursively collect all nodes by name */
+function collectNodes(
+  node: import("@gltf-transform/core").Node,
+  map: Map<string, import("@gltf-transform/core").Node>,
+) {
+  const name = node.getName();
+  if (name) map.set(name, node);
+  for (const child of node.listChildren()) {
+    collectNodes(child, map);
+  }
+}
+
+/**
+ * Convert all FBX/OBJ/GLTF files in a directory to GLB, resolve Unity material
+ * textures, and merge animation clips into base models.
+ *
+ * Animation FBX files ("Model@Walk.fbx") are not ingested as separate assets.
+ * Instead, their animation tracks are merged into the base model GLB, and
+ * animation names are returned in the result for metadata.
  *
  * @param assetDir - Root directory of extracted Unity assets
  * @param guidMap - GUID→relativePath map from extractUnityPackage()
@@ -188,65 +354,147 @@ function findModelFiles(dir: string): string[] {
 export async function convertModels(
   assetDir: string,
   guidMap: Map<string, string>,
-): Promise<void> {
-  const modelFiles = findModelFiles(assetDir);
-  if (modelFiles.length === 0) {
+): Promise<Set<string>> {
+  const allConsumedTextures = new Set<string>();
+  const { models: modelFiles, animations: animationMap } = findModelFiles(assetDir);
+
+  if (modelFiles.length === 0 && animationMap.size === 0) {
     console.log("  No FBX/OBJ/GLTF files to convert");
-    return;
+    return allConsumedTextures;
   }
 
-  console.log(`  Converting ${modelFiles.length} model files to GLB...`);
+  const totalAnims = Array.from(animationMap.values()).reduce((s, v) => s + v.length, 0);
+  console.log(`  Converting ${modelFiles.length} model files to GLB (${totalAnims} animation clips to merge)...`);
   let converted = 0;
   let texturesInjected = 0;
+  let animationsMerged = 0;
 
   for (const modelPath of modelFiles) {
-    const ext = path.extname(modelPath).toLowerCase();
     const glbPath = modelPath.replace(/\.(fbx|obj|gltf)$/i, ".glb");
     const relPath = path.relative(assetDir, modelPath);
 
     try {
-      if (ext === ".fbx") {
-        const fbx2gltf = await getFbx2gltf();
-        // fbx2gltf writes to a temp file, then we move it
-        const tmpOut = path.join(
-          os.tmpdir(),
-          `unity-fbx-${crypto.randomUUID()}.glb`,
-        );
-        await fbx2gltf(modelPath, tmpOut, ["--binary"]);
-        fs.renameSync(tmpOut, glbPath);
-      } else if (ext === ".obj") {
-        const obj2gltf = await getObj2gltf();
-        const glbBuffer = await obj2gltf(modelPath, { binary: true });
-        fs.writeFileSync(glbPath, glbBuffer);
-      } else if (ext === ".gltf") {
-        const io = new NodeIO();
-        const document = await io.read(modelPath);
-        await io.write(glbPath, document);
+      await convertSingleModel(modelPath, glbPath);
+
+      // Resolve Unity material textures via .mat files
+      const result = await resolveUnityMaterials(glbPath, assetDir, guidMap, true);
+      texturesInjected += result.injectedCount;
+      for (const t of result.consumedTextures) allConsumedTextures.add(t);
+
+      // Fallback: proximity-based texture matching for still-untextured materials
+      const modelName = path.basename(modelPath, path.extname(modelPath));
+      const proxResult = await injectProximityTextures(glbPath, assetDir, allConsumedTextures, modelName);
+      texturesInjected += proxResult.injectedCount;
+      for (const t of proxResult.consumedTextures) allConsumedTextures.add(t);
+
+      // Merge animation clips if any exist for this base model
+      const baseKey = path.join(
+        path.dirname(modelPath),
+        path.basename(modelPath, path.extname(modelPath)),
+      );
+      const animFiles = animationMap.get(baseKey);
+      let mergedAnims: string[] = [];
+      if (animFiles && animFiles.length > 0) {
+        mergedAnims = await mergeAnimations(glbPath, animFiles);
+        animationsMerged += mergedAnims.length;
+        // Store animation names in a sidecar file for the ingestion pipeline to pick up
+        if (mergedAnims.length > 0) {
+          fs.writeFileSync(
+            glbPath + ".animations.json",
+            JSON.stringify(mergedAnims),
+          );
+        }
       }
 
-      // Resolve Unity material textures
-      const injected = await resolveUnityMaterials(glbPath, assetDir, guidMap);
-      texturesInjected += injected;
-
-      // Delete original file (keep only GLB)
+      // Delete original source file (keep only GLB)
       if (fs.existsSync(glbPath) && modelPath !== glbPath) {
         fs.unlinkSync(modelPath);
       }
-
-      converted++;
-      if (injected > 0) {
-        console.log(`    ✓ ${relPath} → GLB (${injected} textures injected)`);
-      } else {
-        console.log(`    ✓ ${relPath} → GLB`);
+      // Delete animation source files
+      if (animFiles) {
+        for (const af of animFiles) {
+          if (fs.existsSync(af)) fs.unlinkSync(af);
+        }
       }
+
+      const totalInjected = result.injectedCount + proxResult.injectedCount;
+      converted++;
+      const parts = [`✓ ${relPath} → GLB`];
+      if (totalInjected > 0) parts.push(`${totalInjected} textures`);
+      if (mergedAnims.length > 0) parts.push(`${mergedAnims.length} animations: ${mergedAnims.join(", ")}`);
+      console.log(`    ${parts.join(" | ")}`);
     } catch (err) {
       console.warn(`    ✗ ${relPath}: ${err}`);
     }
   }
 
+  // Handle animation-only groups (no base model found — pick first as base)
+  for (const [baseKey, animFiles] of animationMap) {
+    const baseModelExists = modelFiles.some((m) => {
+      const k = path.join(path.dirname(m), path.basename(m, path.extname(m)));
+      return k === baseKey;
+    });
+    if (baseModelExists) continue; // already handled above
+
+    // No base model — use first animation file as the base, merge rest into it
+    const sorted = [...animFiles].sort();
+    const baseAnimPath = sorted[0];
+    const restAnims = sorted.slice(1);
+    const baseName = path.basename(baseAnimPath, path.extname(baseAnimPath)).split("@")[0];
+    const glbPath = path.join(path.dirname(baseAnimPath), baseName + ".glb");
+    const relPath = path.relative(assetDir, baseAnimPath);
+
+    try {
+      await convertSingleModel(baseAnimPath, glbPath);
+
+      // Resolve textures
+      const result = await resolveUnityMaterials(glbPath, assetDir, guidMap, true);
+      texturesInjected += result.injectedCount;
+      for (const t of result.consumedTextures) allConsumedTextures.add(t);
+
+      const proxResult = await injectProximityTextures(glbPath, assetDir, allConsumedTextures, baseName);
+      texturesInjected += proxResult.injectedCount;
+      for (const t of proxResult.consumedTextures) allConsumedTextures.add(t);
+
+      // Rename the baked-in animation from the first file
+      const io = new NodeIO();
+      const doc = await io.read(glbPath);
+      const firstAnimName = path.basename(baseAnimPath, path.extname(baseAnimPath)).split("@")[1] || "default";
+      for (const anim of doc.getRoot().listAnimations()) {
+        if (!anim.getName()) anim.setName(firstAnimName);
+      }
+      await io.write(glbPath, doc);
+
+      // Merge remaining animations
+      let mergedAnims = [firstAnimName];
+      if (restAnims.length > 0) {
+        const additional = await mergeAnimations(glbPath, restAnims);
+        mergedAnims.push(...additional);
+        animationsMerged += additional.length;
+      }
+
+      if (mergedAnims.length > 0) {
+        fs.writeFileSync(glbPath + ".animations.json", JSON.stringify(mergedAnims));
+      }
+
+      // Delete source animation files
+      for (const af of animFiles) {
+        if (fs.existsSync(af)) fs.unlinkSync(af);
+      }
+
+      converted++;
+      animationsMerged++; // count the first file too
+      console.log(`    ✓ ${relPath} → GLB (no base model, built from animations | ${mergedAnims.length} animations: ${mergedAnims.join(", ")})`);
+    } catch (err) {
+      console.warn(`    ✗ ${relPath} (animation-only): ${err}`);
+    }
+  }
+
   console.log(
-    `  Converted ${converted}/${modelFiles.length} models, ${texturesInjected} textures injected`,
+    `  Converted ${converted}/${modelFiles.length} models, ${texturesInjected} textures injected, ${animationsMerged} animations merged, ${allConsumedTextures.size} textures excluded from image scan`,
   );
+
+  return allConsumedTextures;
 }
 
 // ── CLI entry point ──────────────────────────────────────────────────────
