@@ -1,0 +1,750 @@
+[
+  {
+    "id": "1786",
+    "name": "PUN Classic - FREE"
+  },
+  {
+    "id": "1846",
+    "name": "Photon Viking Multiplayer Showcase"
+  },
+  {
+    "id": "3845",
+    "name": "SimpleSQL"
+  },
+  {
+    "id": "4010",
+    "name": "Cartoon FX Remaster"
+  },
+  {
+    "id": "9076",
+    "name": "Action-RPG Starter Kit"
+  },
+  {
+    "id": "10875",
+    "name": "Underworld: Cave Environment"
+  },
+  {
+    "id": "11562",
+    "name": "Control Freak 2 - Touch Input Made Easy!"
+  },
+  {
+    "id": "12571",
+    "name": "Free Dungeon Pack"
+  },
+  {
+    "id": "14024",
+    "name": "Puppet2D"
+  },
+  {
+    "id": "14290",
+    "name": "Final IK"
+  },
+  {
+    "id": "15233",
+    "name": "CN Controls (Joystick, Touchpad, Button and D-Pad)"
+  },
+  {
+    "id": "17013",
+    "name": "Meshtint Free Barbarian"
+  },
+  {
+    "id": "17254",
+    "name": "Cartoon Town and Farm"
+  },
+  {
+    "id": "18216",
+    "name": "Fantasy Skybox"
+  },
+  {
+    "id": "21113",
+    "name": "Nature Materials vol.1"
+  },
+  {
+    "id": "21721",
+    "name": "Socket.IO for Unity"
+  },
+  {
+    "id": "27676",
+    "name": "DOTween (HOTween v2)"
+  },
+  {
+    "id": "29825",
+    "name": "2D Roguelike"
+  },
+  {
+    "id": "32199",
+    "name": "Maintainer v1"
+  },
+  {
+    "id": "32416",
+    "name": "DOTween Pro"
+  },
+  {
+    "id": "32906",
+    "name": "Simple Fantasy - Cartoon Assets"
+  },
+  {
+    "id": "34217",
+    "name": "Procedural Lightning - High Performance and Shocking Lightning"
+  },
+  {
+    "id": "34497",
+    "name": "Simple Military - Cartoon War"
+  },
+  {
+    "id": "37490",
+    "name": "Simple Racer - Cartoon Assets"
+  },
+  {
+    "id": "37604",
+    "name": "Simple Airport - Cartoon Assets"
+  },
+  {
+    "id": "38028",
+    "name": "Simple Office Interiors - Cartoon assets"
+  },
+  {
+    "id": "38419",
+    "name": "Simple Apocalypse Interiors - Cartoon Assets"
+  },
+  {
+    "id": "38488",
+    "name": "Alien Terrain Pack"
+  },
+  {
+    "id": "40756",
+    "name": "Survival Shooter Tutorial [LEGACY]"
+  },
+  {
+    "id": "42618",
+    "name": "Gaia 2 - Terrain & Scene Generator"
+  },
+  {
+    "id": "43321",
+    "name": "RTS camera"
+  },
+  {
+    "id": "43500",
+    "name": "Simple Town - Cartoon Assets"
+  },
+  {
+    "id": "44678",
+    "name": "Simple Apocalypse - Cartoon Assets"
+  },
+  {
+    "id": "51426",
+    "name": "TEXDraw"
+  },
+  {
+    "id": "52258",
+    "name": "Hex Basic Set: Painted 2D Terrain"
+  },
+  {
+    "id": "53258",
+    "name": "Curved UI - VR Ready Solution To Bend / Warp Your Canvas!"
+  },
+  {
+    "id": "54622",
+    "name": "Realistic Tree 9 [Rainbow Tree]"
+  },
+  {
+    "id": "55514",
+    "name": "Painted 2D Medieval/Fantasy Items"
+  },
+  {
+    "id": "56596",
+    "name": "Medieval Stone Keep"
+  },
+  {
+    "id": "56687",
+    "name": "RPG inventory icons"
+  },
+  {
+    "id": "58821",
+    "name": "Low Poly Mega Pack - Polyworks"
+  },
+  {
+    "id": "59069",
+    "name": "Loading Screen"
+  },
+  {
+    "id": "59901",
+    "name": "Cooking & Eating Audio Pack"
+  },
+  {
+    "id": "60955",
+    "name": "Weather Maker - Volumetric Clouds and Weather System for Unity"
+  },
+  {
+    "id": "63046",
+    "name": "Paint Craft (Drawing & Coloring book engine)"
+  },
+  {
+    "id": "67195",
+    "name": "Procedural Room Dungeon Generator"
+  },
+  {
+    "id": "67636",
+    "name": "Little Heroes Mega Pack"
+  },
+  {
+    "id": "67819",
+    "name": "Bio IK"
+  },
+  {
+    "id": "69687",
+    "name": "Toon RTS Units - Demo"
+  },
+  {
+    "id": "71644",
+    "name": "Low-Poly Medieval Strategy Pack"
+  },
+  {
+    "id": "73777",
+    "name": "Legacy Particle Pack"
+  },
+  {
+    "id": "74107",
+    "name": "Simple Touch Controller"
+  },
+  {
+    "id": "74817",
+    "name": "Shader Control"
+  },
+  {
+    "id": "79171",
+    "name": "Surforge"
+  },
+  {
+    "id": "80146",
+    "name": "Low Poly Vegetation Pack"
+  },
+  {
+    "id": "80585",
+    "name": "POLYGON - Adventure Pack - Art by Synty"
+  },
+  {
+    "id": "80868",
+    "name": "UModeler"
+  },
+  {
+    "id": "82022",
+    "name": "Oculus Integration (Deprecated)"
+  },
+  {
+    "id": "83694",
+    "name": "POLYGON - Knights Pack - Art by Synty"
+  },
+  {
+    "id": "84470",
+    "name": "Prison cell"
+  },
+  {
+    "id": "84761",
+    "name": "Shader Weaver"
+  },
+  {
+    "id": "85664",
+    "name": "POLYGON - Vikings Pack - Art by Synty"
+  },
+  {
+    "id": "89041",
+    "name": "Odin Inspector and Serializer"
+  },
+  {
+    "id": "89154",
+    "name": "Pixel Character Builder"
+  },
+  {
+    "id": "89551",
+    "name": "POLYGON - Samurai Pack - Art by Synty"
+  },
+  {
+    "id": "91558",
+    "name": "Low Poly Modular Terrain Pack"
+  },
+  {
+    "id": "92579",
+    "name": "POLYGON - Pirate Pack - Art by Synty"
+  },
+  {
+    "id": "93089",
+    "name": "Low Poly Animated Animals"
+  },
+  {
+    "id": "95016",
+    "name": "uRPG - RPG Engine"
+  },
+  {
+    "id": "95214",
+    "name": "POLYGON - City Pack - Art by Synty"
+  },
+  {
+    "id": "97949",
+    "name": "POLYGON - Heist Pack - Art by Synty"
+  },
+  {
+    "id": "98505",
+    "name": "Loading screen animation"
+  },
+  {
+    "id": "98845",
+    "name": "Post Processing Profiles"
+  },
+  {
+    "id": "103056",
+    "name": "HUD Navigation System"
+  },
+  {
+    "id": "103389",
+    "name": "Vegetation Studio"
+  },
+  {
+    "id": "104017",
+    "name": "Polyverse Skies | Low Poly Skybox Shaders"
+  },
+  {
+    "id": "107464",
+    "name": "Medieval Fantasy Town Village Environment for RPG FPS"
+  },
+  {
+    "id": "108285",
+    "name": "UI Particle System"
+  },
+  {
+    "id": "110992",
+    "name": "Serialized Dictionary Lite"
+  },
+  {
+    "id": "111436",
+    "name": "Rocky Hills Environment - Pro Pack"
+  },
+  {
+    "id": "112212",
+    "name": "POLYGON - Western Pack - Art by Synty"
+  },
+  {
+    "id": "112837",
+    "name": "Asset Usage Detector"
+  },
+  {
+    "id": "113946",
+    "name": "Icon Generator - Generate icons from prefabs"
+  },
+  {
+    "id": "115950",
+    "name": "POLYGON - Sci-Fi City Pack - Art by Synty"
+  },
+  {
+    "id": "116611",
+    "name": "Everyday Motion Pack"
+  },
+  {
+    "id": "121265",
+    "name": "Simple Kitchen Probs"
+  },
+  {
+    "id": "122247",
+    "name": "Optimizers"
+  },
+  {
+    "id": "122249",
+    "name": "Look Animator"
+  },
+  {
+    "id": "123416",
+    "name": "Trivia Quiz Kit .PSD Sources Pack"
+  },
+  {
+    "id": "127325",
+    "name": "Particle Pack"
+  },
+  {
+    "id": "128817",
+    "name": "PBR Material Bundle Vol1 (445)"
+  },
+  {
+    "id": "130518",
+    "name": "Photon Voice 2"
+  },
+  {
+    "id": "132195",
+    "name": "Meadow Environment - Dynamic Nature"
+  },
+  {
+    "id": "132433",
+    "name": "Mtree - Tree Creation"
+  },
+  {
+    "id": "134149",
+    "name": "Highlight Plus - All in One Outline & Selection Effects"
+  },
+  {
+    "id": "134501",
+    "name": "POLYGON - Snow Kit - Art by Synty"
+  },
+  {
+    "id": "135178",
+    "name": "Digger – Terrain Caves and Overhangs"
+  },
+  {
+    "id": "135258",
+    "name": "Toony Tiny RTS Set"
+  },
+  {
+    "id": "137126",
+    "name": "POLYGON - Prototype Pack - Art by Synty"
+  },
+  {
+    "id": "137148",
+    "name": "Aura 2 - Volumetric Lighting & Fog"
+  },
+  {
+    "id": "140806",
+    "name": "CTS 2019 - Complete Terrain Shader"
+  },
+  {
+    "id": "141674",
+    "name": "Crest Water 4 URP (Ocean, Rivers & Lakes)"
+  },
+  {
+    "id": "142750",
+    "name": "Winter Environment - Nature Pack"
+  },
+  {
+    "id": "142753",
+    "name": "Roslyn C# - Runtime Compiler"
+  },
+  {
+    "id": "143176",
+    "name": "MiVRy - 3D Gesture Recognition"
+  },
+  {
+    "id": "144238",
+    "name": "Minotaur Character Pack - Fantasy RPG"
+  },
+  {
+    "id": "150668",
+    "name": "Forest Environment - Dynamic Nature"
+  },
+  {
+    "id": "152704",
+    "name": "FANTASTIC - Food Pack"
+  },
+  {
+    "id": "153314",
+    "name": "Oak Forest Environment"
+  },
+  {
+    "id": "153552",
+    "name": "Nature Renderer 2020・Perpetual License"
+  },
+  {
+    "id": "157651",
+    "name": "Epic Toon VFX 2"
+  },
+  {
+    "id": "157744",
+    "name": "Human Basic Motions"
+  },
+  {
+    "id": "157764",
+    "name": "Support package for Hovl Studio assets"
+  },
+  {
+    "id": "162907",
+    "name": "Japanese Alley"
+  },
+  {
+    "id": "163222",
+    "name": "Third Person Shooter Bundle"
+  },
+  {
+    "id": "165863",
+    "name": "Aurora FPS Engine"
+  },
+  {
+    "id": "167990",
+    "name": "Asset Cleaner PRO - Clean | Find References"
+  },
+  {
+    "id": "170400",
+    "name": "Low Poly Terrain - Polaris 2020"
+  },
+  {
+    "id": "176673",
+    "name": "Restaurant LittlePack"
+  },
+  {
+    "id": "176695",
+    "name": "GUI Pro - Casual Game"
+  },
+  {
+    "id": "178235",
+    "name": "Quirky Series - FREE Animals Pack"
+  },
+  {
+    "id": "180075",
+    "name": "Michsky UI Bundle"
+  },
+  {
+    "id": "182144",
+    "name": "Top Down - Fantasy Forest"
+  },
+  {
+    "id": "189511",
+    "name": "Battle Royale Hero PBR"
+  },
+  {
+    "id": "200569",
+    "name": "Dark - Complete Horror UI"
+  },
+  {
+    "id": "201384",
+    "name": "Adventure Character"
+  },
+  {
+    "id": "201717",
+    "name": "Modern UI Pack"
+  },
+  {
+    "id": "203672",
+    "name": "Clothing Culler"
+  },
+  {
+    "id": "204667",
+    "name": "RapidIcon | In-Editor Icon Generator"
+  },
+  {
+    "id": "204803",
+    "name": "100+ Stylized Weapons Bundle - Fantasy RPG"
+  },
+  {
+    "id": "209771",
+    "name": "Quirky Series ULTIMATE Pack"
+  },
+  {
+    "id": "214714",
+    "name": "RaycastPro"
+  },
+  {
+    "id": "215157",
+    "name": "Poly Universal Pack"
+  },
+  {
+    "id": "222285",
+    "name": "Dialogue Anims"
+  },
+  {
+    "id": "224638",
+    "name": "Fantasy - Low Poly 3D Models Pack"
+  },
+  {
+    "id": "231304",
+    "name": "Horror Bundle - Sound Effects"
+  },
+  {
+    "id": "231674",
+    "name": "Mountain Lake - Forest Pack"
+  },
+  {
+    "id": "235041",
+    "name": "Toon Farm Pack"
+  },
+  {
+    "id": "239234",
+    "name": "Easy Grid Builder Pro"
+  },
+  {
+    "id": "239380",
+    "name": "Live Script Reload (on device Hot-Reload)"
+  },
+  {
+    "id": "240987",
+    "name": "LIQUA Volumetric Fluids"
+  },
+  {
+    "id": "243562",
+    "name": "UPixelator - Pixelize 3d Scenes"
+  },
+  {
+    "id": "244541",
+    "name": "Retro Horror Template"
+  },
+  {
+    "id": "245213",
+    "name": "MFPS Mobile"
+  },
+  {
+    "id": "245262",
+    "name": "Hyper Casual FX Pack Vol.2"
+  },
+  {
+    "id": "245854",
+    "name": "Cute Sushi Restaurant Set"
+  },
+  {
+    "id": "246667",
+    "name": "Polygon Level Building Pack"
+  },
+  {
+    "id": "247698",
+    "name": "Character Auras 3"
+  },
+  {
+    "id": "248841",
+    "name": "Chat GPT For Games - AI Integration"
+  },
+  {
+    "id": "251318",
+    "name": "Editor Enhancers Bundle"
+  },
+  {
+    "id": "251334",
+    "name": "JU TPS 3 - Third Person Shooter GameKit + Vehicle Physics"
+  },
+  {
+    "id": "254055",
+    "name": "Bestiary Monster Bundle Vol 1"
+  },
+  {
+    "id": "254358",
+    "name": "Hot Reload | Edit Code Without Compiling"
+  },
+  {
+    "id": "255279",
+    "name": "Modular Stylized Character 1"
+  },
+  {
+    "id": "256996",
+    "name": "Breeze - Advanced Character Behaviour"
+  },
+  {
+    "id": "258405",
+    "name": "Medieval Fantasy Ruins - Dark Forest Environment"
+  },
+  {
+    "id": "259090",
+    "name": "Stylized Pirate Port City (Modular)"
+  },
+  {
+    "id": "259457",
+    "name": "Better Fog: Height Fog, Light Scattering & More"
+  },
+  {
+    "id": "259878",
+    "name": "Tileable Maze and Dungeon Blocks"
+  },
+  {
+    "id": "261480",
+    "name": "RPG Monster BUNDLE Polyart"
+  },
+  {
+    "id": "262198",
+    "name": "Witch Hag Animations"
+  },
+  {
+    "id": "262233",
+    "name": "Abandoned Industrial Factory Environment"
+  },
+  {
+    "id": "262345",
+    "name": "RPG - Stylized Fantasy Environment"
+  },
+  {
+    "id": "262761",
+    "name": "DLSS 3 - Upscaling for Unity"
+  },
+  {
+    "id": "264352",
+    "name": "Dreamscape Nature Mountains - Stylized Open World Environment"
+  },
+  {
+    "id": "264559",
+    "name": "Meta XR Interaction SDK Essentials"
+  },
+  {
+    "id": "264857",
+    "name": "Heat - Complete Modern UI"
+  },
+  {
+    "id": "265297",
+    "name": "Dinosaurus Pack with Babies"
+  },
+  {
+    "id": "265651",
+    "name": "GUI - Casual Fantasy"
+  },
+  {
+    "id": "266067",
+    "name": "Transitions Plus"
+  },
+  {
+    "id": "266564",
+    "name": "Farm Game Sound Pack"
+  },
+  {
+    "id": "266732",
+    "name": "Meta XR Simulator"
+  },
+  {
+    "id": "267003",
+    "name": "Ghost character Free"
+  },
+  {
+    "id": "267636",
+    "name": "Best HTTP"
+  },
+  {
+    "id": "268521",
+    "name": "(Deprecated) Meta XR Interaction SDK OVR Samples"
+  },
+  {
+    "id": "268761",
+    "name": "Best TLS Security"
+  },
+  {
+    "id": "268834",
+    "name": "Best HTTP Bundle"
+  },
+  {
+    "id": "268988",
+    "name": "Restaurant - Simple Interior"
+  },
+  {
+    "id": "269657",
+    "name": "Meta XR All-in-One SDK"
+  },
+  {
+    "id": "276554",
+    "name": "Better Transform - Size, Notes, Global-Local workspace & child parent transform"
+  },
+  {
+    "id": "282274",
+    "name": "GLAMOR Advanced Image Effects"
+  },
+  {
+    "id": "288783",
+    "name": "RPG_Animations_Pack_FREE"
+  },
+  {
+    "id": "293962",
+    "name": "VFX Magical Flames"
+  },
+  {
+    "id": "297318",
+    "name": "Elemental Spells Full Pack VFX"
+  },
+  {
+    "id": "302151",
+    "name": "66 Creatures Super Mega (Pack)"
+  },
+  {
+    "id": "302531",
+    "name": "27 NPC Characters Medieval (Pack)"
+  },
+  {
+    "id": "321005",
+    "name": "Highlight Plus 2 - All in One Outline & Selection Effects"
+  }
+]

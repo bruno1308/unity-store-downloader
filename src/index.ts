@@ -441,8 +441,8 @@ async function main() {
     else if (result === "skipped") { console.log("    (exists, skipped)"); skipped++; }
     else failed++;
 
-    // Rate limit: 1 second between downloads
-    if (i < toProcess.length - 1) await sleep(1000);
+    // Rate limit: 3 seconds between downloads
+    if (i < toProcess.length - 1) await sleep(3000);
   }
 
   // ── Summary ────────────────────────────────────────────────────────
